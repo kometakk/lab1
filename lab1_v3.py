@@ -2,7 +2,7 @@ class AstarNode:
     # Parameters:
     # coords -> tuple=>(integer, integer)
     # cost_so_far -> decimal
-    # priority -> decimal
+    # priority -> decimall
     def __init__(self, coords, cost_so_far, priority):
         self.coords = coords
         self.cost_so_far = cost_so_far
