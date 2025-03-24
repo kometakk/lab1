@@ -12,6 +12,9 @@ class AstarNode:
 def hEuclidean(currCoords, finishCoords):
     return ((finishCoords[0] - currCoords[0])**2 + (finishCoords[1] - currCoords[1])**2)**0.5
     """Heuristic function calculated here"""
+
+def hManhattan(currCoords, finishCoords):
+    return abs(finishCoords[0] - currCoords[0]) + abs(finishCoords[1] - currCoords[1])
     
 
 def reconstructPath(came_from, start, finish):
