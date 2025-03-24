@@ -8,39 +8,34 @@ class AstarNode:
         self.cost_so_far = cost_so_far
         self.priority = priority
 
-    def getNodeNeighbors(currNode, maze):
-        # maze[y][x]
-        if(currNode.coords[0]>0 and currNode.coords[0])
-
-        vert_dist = abs(self.coords[0]-otherNode.coords[0])
-        horiz_dist = abs(self.coords[1]-otherNode.coords[1])
-        if(vert_dist == 1 and horiz_dist == 0):
-            return True
-        if(vert_dist == 0 and horiz_dist == 1):
-            return True
-        return False
-
 # First heuristic function: Manhattan
-def hManhattan(currCoords, finishCoords):
+def hEuclidean(currCoords, finishCoords):
     return ((finishCoords[0] - currCoords[0])**2 + (finishCoords[1] - currCoords[1])**2)**0.5
     """Heuristic function calculated here"""
     
-def findNodeWithLowestF(frontier, finish):
-    maxF = -1.0
-    maxNode = frontier[i]
-    for i in range(1, len(frontier)):
-        currF = frontier[i].cost_so_far + hManhattan(frontier[i].coords, finish)
-        if(maxF < currF):
-            maxF = currF
-            maxNode = frontier[i]
-    return maxNode
 
 def reconstructPath(came_from, start, finish):
-    return "Not implemented yet"
+    path = []
+    current = finish
+    num_steps = 0
+    while current != start:
+        path.append(current)
+        current = came_from.get(current)
+        num_steps += 1
+        if current is None:
+            # No path found
+            return [], -1
+    path.append(start)
+    path.reverse()
+    return path, num_steps
 
+
+def vizCoordsToString(coords):
+    return "(" + str(coords[0]) + ", " + str(coords[1]) + ") "
 
 
 def astar(maze, start, finish):
+    
     """
     A* search
 
@@ -54,69 +49,129 @@ def astar(maze, start, finish):
     - Viz - everything required for step-by-step vizualization
     
     """
+    # Write your code here
+
+    viz = ""
+    # Variables:
+    # all_nodes: Dictionary<coords, AStarNode>
+    # frontier: Array<coords>
+    # came_from: Dictionary<coords, coords>
+
+    # It will be used to store every node info
+    # all_nodes[(int, int)] -> AstarNode
+    all_nodes = {}
+
+    # came_from <- {}
+    # came_from[some_node_coords] == coords_of_node_from_which_some_node_came_from
+    came_from = {}
+
 
     # frontier <- {s}; cost_so_far[s] <- 0
-    frontier = [AstarNode(start, 0, 0+hManhattan(start, finish))]
-    # came_from <- {}
-    came_from = {}
+    all_nodes[start] = AstarNode(start, 0, 0+hEuclidean(start, finish))
+    frontier = [start]
+    
+
     # while frontier is not empty do
     while(frontier != []):
         # current <- node in frontier with lowest f value
-        current_node = findNodeWithLowestF(frontier, finish)
+        temp_min_node = all_nodes[frontier[0]]
+        minF = temp_min_node.cost_so_far + hEuclidean(temp_min_node.coords, finish)
+        for i in range(1, len(frontier)):
+            temp_loop_node = all_nodes[frontier[i]]
+            currF = temp_loop_node.cost_so_far + hEuclidean(temp_loop_node.coords, finish)
+            if(minF > currF):
+                minF = currF
+                temp_min_node = temp_loop_node
+
+        current_node = temp_min_node
+
         # in current = g then
         if(current_node.coords == finish):
             # return reconstruct_path(came_from, s, g)
-            return reconstructPath(came_from, start, finish)
+            path, num_steps = reconstructPath(came_from, start, finish)
+            ####
+            viz += "\nFinal path:\n"
+            viz += str(path) + "\n"
+            viz += "Number of steps = " + str(num_steps)
+            ####
+            return num_steps, viz
         # remove current from frontier
-        for node in frontier:
-            if(node.corrds == current_node.coords):
-                frontier.pop()
+        for i in range(0, len(frontier)):
+            if(frontier[i] == current_node.coords):
+                frontier.pop(i)
                 break
         # foreach neighbor next of current do
-        neighbors_current_node = getNodeNeighbors(current_node, maze)
-        """ TODO: scan for new current_node neighbors
-            and if some neighbor is not present, add
-            it to the frontier. New neighbor has cost_so_far
-            equal to -1"""
-        for neighborNode in neighbors_current_node:
-            if(current_node.isNeighbor(neighborNode) == False):
-                continue
+
+        ####
+        viz += "Current node: "
+        viz += "coords = " + vizCoordsToString(current_node.coords) + ", "
+        viz += "cost_so_far = " + str(current_node.cost_so_far) + "\n"
+        ####
+
+        neighbor_nodes_coords = []
+        #self.coords[0] - x == column   |== maze[][x]
+        #self.coords[1] - y == row      |== maze[y][]
+        # North
+        # y > 0 and maze[y-1][] == 0
+
+        for neighbor_vector in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+            neigh_coords = (current_node.coords[0] + neighbor_vector[0], current_node.coords[1] + neighbor_vector[1])
+            is_neigh_in_maze_verti = neigh_coords[1] >= 0 and neigh_coords[1] < len(maze)
+            is_neigh_in_maze_horiz = neigh_coords[0] >= 0 and neigh_coords[0] < len(maze[0])
+            if(is_neigh_in_maze_verti and is_neigh_in_maze_horiz and maze[neigh_coords[1]][neigh_coords[0]] == 0):
+                neighbor_nodes_coords.append(neigh_coords)
+
+        ####
+        viz += "Neighbors: "
+        for neighbor_coords in neighbor_nodes_coords:
+            viz += vizCoordsToString(neighbor_coords) + " "
+        viz += "\n"
+        ####
+
+        for neighbor_coords in neighbor_nodes_coords:
             # new_cost <- cost_so_far[current] + c(current, next)
             new_cost = current_node.cost_so_far + 1
             # if next not in cost_so_far or new_cost < cost_so_far[next] then
-            if(neighborNode.cost_so_far == -1 or new_cost < neighborNode.cost_so_far):
+            if(neighbor_coords not in all_nodes or new_cost < all_nodes[neighbor_coords].cost_so_far):
+                
+
                 # cost_so_far[next] <- new_cost
-                neighborNode.cost_so_far = new_cost
                 # priority <- new_cost + h(next, g); add next to frontier with priority priority
-                neighborNode.priority <- new_cost + hManhattan(neighborNode.coords, finish)
+                newNode = AstarNode(neighbor_coords, new_cost, new_cost + hEuclidean(neighbor_coords, finish))
+                
+                ####
+                viz += "New node: " + vizCoordsToString(newNode.coords) + " " + str(newNode.cost_so_far) + " " + str(newNode.priority) + "\n"
+                ####
+
+                all_nodes[neighbor_coords] = newNode
+                
                 # add next to frontier with priority priority
-                frontier.append(neighborNode)
+                frontier.append(newNode.coords)
                 # came_fron[next] <- current
-                came_from.update(current_node.coords, neighborNode.coords)
-
-
+                came_from[neighbor_coords] = current_node.coords
         
+        viz += "\n\n"
 
-    # Write your code here
+    # If no path found:
+    return -1, viz
+
 
 def vizualize(viz):
-    """
-    Vizualization function. Shows step by step the work of the search algorithm
-
-    Parameters:
-    - viz: everything required for step-by-step vizualization
-    """
+    print("\n\n[[[Vizualisation]]]")
+    print(viz)
 
 
 # Example usage:
 maze = [
-    [0, 1, 0, 0, 0],
-    [0, 1, 0, 1, 0],
-    [0, 0, 0, 1, 0],
-    [1, 0, 1, 0, 0],
-    [0, 0, 0, 1, 0]
+# x| 0  1  2  3  4
+    [0, 1, 0, 0, 0], # 0 \y
+    [0, 1, 0, 1, 0], # 1
+    [0, 0, 0, 1, 0], # 2
+    [1, 0, 1, 0, 0], # 3
+    [0, 0, 0, 1, 0]  # 4
 ]
-
+# (x, y) == (column, row)
+# maze[y][x]
 start_position = (0, 0)
 finish_position = (4, 4)
 
