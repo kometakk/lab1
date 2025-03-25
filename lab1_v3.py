@@ -8,15 +8,22 @@ class AstarNode:
         self.cost_so_far = cost_so_far
         self.priority = priority
 
-# First heuristic function: Manhattan
+# First heuristic function: Euclidean
 def hEuclidean(currCoords, finishCoords):
-    return ((finishCoords[0] - currCoords[0])**2 + (finishCoords[1] - currCoords[1])**2)**0.5
-    """Heuristic function calculated here"""
+    return (
+        (finishCoords[0] - currCoords[0])**2
+        + (finishCoords[1] - currCoords[1])**2)**0.5
 
+# Second heuristic function: Manhattan
 def hManhattan(currCoords, finishCoords):
     return abs(finishCoords[0] - currCoords[0]) + abs(finishCoords[1] - currCoords[1])
     
-
+# Reconstructs a path from final node to the first
+# using came_from dictionary. If no path was reconstructed, then
+# it returns an empty set as a path and number of steps as -1
+# came_from type: Dictionary<(int, int), (int, int)>
+# start type: (int, int)
+# finish type: (int, int)
 def reconstructPath(came_from, start, finish):
     path = []
     current = finish
@@ -54,41 +61,39 @@ def astar(maze, start, finish):
     """
     # Write your code here
 
+    # This is a string, which will hold information
+    # needed for algorithm visualisation. It will
+    # be displayed in the vizualize() function
     viz = ""
-    # Variables:
-    # all_nodes: Dictionary<coords, AStarNode>
-    # frontier: Array<coords>
-    # came_from: Dictionary<coords, coords>
 
-    # It will be used to store every node info
-    # all_nodes[(int, int)] -> AstarNode
+    # It will be used to store information about
+    # every discovered node
     all_nodes = {}
 
-    # came_from <- {}
-    # came_from[some_node_coords] == coords_of_node_from_which_some_node_came_from
+    # It will be used
+    # type: Dictionary[(int, int)] == (int, int)
     came_from = {}
 
-
-    # frontier <- {s}; cost_so_far[s] <- 0
+    # Add starting node as a first frontier node
     all_nodes[start] = AstarNode(start, 0, 0+hEuclidean(start, finish))
     frontier = [start]
     
 
-    # while frontier is not empty do
     while(frontier != []):
-        # current <- node in frontier with lowest f value
+        # Assign current node with a node with the lowest
+        # f value (cost so far + heuristic function value )
         temp_min_node = all_nodes[frontier[0]]
-        minF = temp_min_node.cost_so_far + hEuclidean(temp_min_node.coords, finish)
+        minF = temp_min_node.priority
         for i in range(1, len(frontier)):
             temp_loop_node = all_nodes[frontier[i]]
-            currF = temp_loop_node.cost_so_far + hEuclidean(temp_loop_node.coords, finish)
+            currF = temp_loop_node.priority
             if(minF > currF):
                 minF = currF
                 temp_min_node = temp_loop_node
 
         current_node = temp_min_node
 
-        # in current = g then
+        # If current node is the final one
         if(current_node.coords == finish):
             # return reconstruct_path(came_from, s, g)
             path, num_steps = reconstructPath(came_from, start, finish)
@@ -109,6 +114,7 @@ def astar(maze, start, finish):
         viz += "Current node: "
         viz += "coords = " + vizCoordsToString(current_node.coords) + ", "
         viz += "cost_so_far = " + str(current_node.cost_so_far) + "\n"
+        viz += "Frontier = " + str(frontier) + "\n"
         ####
 
         neighbor_nodes_coords = []
@@ -166,15 +172,13 @@ def vizualize(viz):
 
 # Example usage:
 maze = [
-# x| 0  1  2  3  4
-    [0, 1, 0, 0, 0], # 0 \y
-    [0, 1, 0, 1, 0], # 1
-    [0, 0, 0, 1, 0], # 2
-    [1, 0, 1, 0, 0], # 3
-    [0, 0, 0, 1, 0]  # 4
+    [0, 1, 0, 0, 0],
+    [0, 1, 0, 1, 0],
+    [0, 0, 0, 1, 0],
+    [1, 0, 1, 0, 0],
+    [0, 0, 0, 1, 0]
 ]
-# (x, y) == (column, row)
-# maze[y][x]
+
 start_position = (0, 0)
 finish_position = (4, 4)
 
