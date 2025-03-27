@@ -13,23 +13,23 @@ def possible_move(maze: list[list], x: int, y: int) -> bool:
     return True
 
 
-def next_node(queue: dict) -> tuple:
-    """ Returns the next element from the queue that has the lowest distance to destination. """
-    current, min_distance = None, None
+def min_f(frontier: dict):
+    """ Returns the element from the frontier that has the lowest priority. """
+    current, min_priority = None, None
 
-    for coord, val in queue.items():
+    for coord, val in frontier.items():
         if current is None:
             current = coord
-            min_distance = val
+            min_priority = val
 
-        if val < min_distance:
+        if val < min_priority:
             current = coord
-            min_distance = val
+            min_priority = val
 
     return current
 
 
-def astar(maze: list[list], start: tuple, finish: tuple) -> tuple[int, list[tuple]]:
+def astar(maze: list[list], start: tuple, finish: tuple) -> tuple[int, dict]:
     """
     A* search
 
@@ -41,34 +41,32 @@ def astar(maze: list[list], start: tuple, finish: tuple) -> tuple[int, list[tupl
     Returns:
     - Number of steps from start to finish, equals -1 if the path is not found
     - Viz - everything required for step-by-step vizualization
-    
+
     """
-    path = []
-    if not possible_move(maze, x=start[1], y=start[0]) or not possible_move(maze, x=finish[1], y=finish[0]):
-        return -1, path
+    frontier = {start: 0}
+    came_from = {}
+    cost_so_far = {start: 0}
 
-    if start == finish:
-        path.append(start)
-        return len(path) - 1, path
-    pri_queue = {start: cal_distance(start, finish)}
+    while len(frontier) > 0:
+        current = min_f(frontier)
+        if current == finish:
+            return len(came_from), came_from
 
-    while len(pri_queue) > 0:
-        current = next_node(pri_queue)
-        path.append(current)
-        pri_queue.pop(current)
-
+        frontier.pop(current)
         c_x = current[1]
         c_y = current[0]
 
         neighbors = [(c_y, c_x + 1), (c_y, c_x - 1), (c_y + 1, c_x), (c_y - 1, c_x)]
+        new_cost = cost_so_far[current] + 1  # Cost of moving from one tile to its neighboring one.
         for neighbor in neighbors:
-            if possible_move(maze, x=neighbor[1], y=neighbor[0]) and neighbor not in pri_queue and neighbor not in path:
-                if neighbor == finish:
-                    path.append(neighbor)
-                    return len(path) - 1, path
-                pri_queue[neighbor] = cal_distance(neighbor, finish)
+            if (possible_move(maze, x=neighbor[1], y=neighbor[0]) and
+                    (neighbor not in cost_so_far or new_cost < cost_so_far[neighbor])):
+                cost_so_far[neighbor] = new_cost
+                priority = new_cost + cal_distance(neighbor, finish)
+                frontier[neighbor] = priority
+                came_from[neighbor] = current
 
-    return -1, path
+    return -1, came_from
 
 
 def print_maze(maze: list[list]) -> None:
@@ -80,15 +78,16 @@ def print_maze(maze: list[list]) -> None:
         print(viz_row)
 
 
-def vizualize(viz: list[tuple[int, int]], maze: list[list], num_steps: int) -> None:
+def vizualize(viz: dict, maze: list[list], num_steps: int) -> None:
     """
     Vizualization function. Shows step by step the work of the search algorithm
 
     Parameters:
     - viz: everything required for step-by-step vizualization
     """
-    for i in range(len(viz)):
-        node = viz[i]
+    search_path = list(viz.keys())
+    for i in range(len(search_path)):
+        node = search_path[i]
         if i == 0:
             maze[node[0]][node[1]] = 'S'
         elif i == len(viz) - 1 and num_steps != -1:
